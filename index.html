@@ -195,12 +195,12 @@ function home() {
   location.hash = "";
   const next = LESSONS.find(l => (S.seen[l.id] || []).length < l.cards.length) || LESSONS[0];
   app.innerHTML = header() + page(`
-    <div class="hero"><div><h2>Ôn RMD301 theo slide gốc của cô</h2><p>${LESSONS.length} bài tóm gọn từ 18 file slide (Session 01–17, 52), bấm Next để lướt, keyword quan trọng được tô vàng. Quiz lấy từ các bộ có sẵn (Quizlet, file ôn tập của lớp) đã kiểm đáp án theo slide, cộng thêm vài câu bù cho phần chưa có quiz.</p></div></div>
+    <div class="hero"><div><h2>Ôn RMD301 theo slide gốc của cô</h2><p>${LESSONS.length} bài tóm gọn từ 18 file slide (Session 01–17, 52), bấm Next để lướt, keyword quan trọng được tô vàng. Quiz chính lấy từ các bộ Quizlet RMD301 (đã dò đáp án theo slide), cộng thêm câu soạn theo slide cho những bài Quizlet chưa hỏi tới.</p></div></div>
     <div class="big2">
       <button class="bigbtn ink" id="toL"><span class="n">${LESSONS.length} bài</span><h3>Bài học</h3><p>Học tiếp: <b style="color:#fff">${esc(next.t)}</b></p></button>
       <button class="bigbtn" id="toQ"><span class="n">${Q.filter(q => !q.extra).length} câu</span><h3>Quiz</h3><p>Chơi 10 câu theo bài, trộn nhiều bài, hoặc thi thử 40 câu.</p></button>
     </div>
-    <div class="legend">Câu nhãn <b>ĐÃ SỬA</b> là câu mà nguồn gốc ghi sai đáp án, đã sửa theo slide cô. Câu ngoài nội dung slide (case Moss, Rashid, TAM, Gestalt…) mặc định bị ẩn, bật lại trong mục Quiz nếu muốn.</div>`);
+    <div class="legend">Câu nhãn <b>ĐÃ SỬA</b> là câu mà nguồn gốc ghi sai đáp án, đã sửa theo slide cô. Câu các nhóm tự soạn và câu ngoài slide mặc định bị ẩn vì chưa chắc đúng, bật lại trong mục Quiz nếu muốn.</div>`);
   bindHome();
   $("#toL").onclick = () => go("lessons");
   $("#toQ").onclick = () => go("quizHome");
