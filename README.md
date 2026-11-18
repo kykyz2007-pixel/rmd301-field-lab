@@ -1,11 +1,11 @@
 # RMD301 Field Lab
 
-Web ôn thi RMD301 – Research Methods for Design (GD2006, cô HUENTM).
+Revision site for RMD301 – Research Methods for Design (GD2006, HUENTM). Everything is in English, following the teacher's slides.
 
-👉 **Mở web:** https://kykyz2007-pixel.github.io/rmd301-field-lab/
+👉 **Open the site:** https://kykyz2007-pixel.github.io/rmd301-field-lab/
 
-- **Bài học:** 18 bài tóm tắt theo slide gốc của cô (Session 01–17, 52), có hình, keyword in đậm, cuối mỗi bài có toàn bộ hình trong slide. Bấm Next / phím mũi tên / vuốt để lướt.
-- **Quiz:** bộ ưu tiên (Quizlet RMD301 đã dò đáp án theo slide + câu soạn theo slide) và bộ đầy đủ để ôn thêm. Có quiz 10/20 câu, thi thử 40 câu / 40 phút, làm hết toàn bộ câu, ôn lại câu sai.
-- Câu các nhóm tự soạn được ẩn mặc định vì chưa chắc đúng; bật công tắc trong phần Quiz nếu muốn luyện thêm.
+- **Lessons:** 18 lessons summarised from the teacher's slides (Sessions 01–17, 52), with key terms in bold and images; the last card of each lesson shows every image from that session's slides.
+- **Quiz:** a priority set (RMD301 Quizlet sets with answers checked against the slides + questions written from the slides) and a full set for extra practice. Modes: quick 10 / 20 questions, 40-question mock exam (40 minutes), all questions, and review mistakes.
+- Student-written group questions are hidden by default because some may be wrong; switch them on in the Quiz section.
 
-Tiến độ học lưu trên trình duyệt của từng người.
+Progress is saved in each person's own browser.
