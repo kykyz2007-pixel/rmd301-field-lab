@@ -337,7 +337,7 @@ function quizHome() {
       <button class="mode" data-m="mix20"><h3>Quiz · 20</h3><p>A bit longer, still with explanations.</p></button>
       <button class="mode" data-m="exam"><h3>Mock exam · 40</h3><p>40 minutes, graded at the end, out of 10.</p></button>
       <button class="mode" data-m="all"><h3>All ${pool().length} questions</h3><p>Every question from the selected lessons, shuffled, with feedback after each one.</p></button>
-      <button class="mode" data-m="wrong"><h3>Review mistakes (${S.wrong.length})</h3><p>A question leaves the list after you get it right twice.</p></button>
+      <button class="mode" data-m="wrong"><h3>Review mistakes (${S.wrong.length})</h3><p>All ${S.wrong.length} of your mistakes, shuffled. A question leaves the list after you get it right twice.</p></button>
     </div>`);
   bindHome(); $("#bk").onclick = () => go("home");
   app.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { const k = b.dataset.s; S.sel = S.sel.includes(k) ? S.sel.filter(x => x !== k) : S.sel.concat(k); save(); quizHome(); });
@@ -353,10 +353,10 @@ function startQuiz(m, ids) {
   stop(); document.onkeydown = null;
   let base = m === "wrong" ? Q.filter(q => S.wrong.includes(q.id)) : m === "lesson" ? lessonQ(ids[0]) : pool();
   if (!base.length) { toast(m === "wrong" ? "No mistakes yet – do a few quizzes first." : "No lessons selected."); return; }
-  const n = m === "all" ? base.length : m === "exam" ? 40 : m === "mix20" ? 20 : 10;
+  const n = (m === "all" || m === "wrong") ? base.length : m === "exam" ? 40 : m === "mix20" ? 20 : 10;
   // prefer unseen / previously wrong
   const w = q => { const s = S.stat[q.id]; return (s ? (s.c - s.w * 2) : -1) + Math.random() * 2.5; };
-  let list = (m === "exam" || m === "all") ? shuffle(base) : base.slice().sort((a, b) => w(a) - w(b));
+  let list = (m === "exam" || m === "all" || m === "wrong") ? shuffle(base) : base.slice().sort((a, b) => w(a) - w(b));
   list = shuffle(list.slice(0, Math.min(n, list.length)));
   G = { m, ids, items: list.map(q => ({ q, order: shuffle(q.options.map((_, k) => k)), pick: null })), i: 0, right: 0, streak: 0, best: 0, t0: Date.now() };
   if (m === "exam") { G.left = 40 * 60; timerId = setInterval(() => { G.left--; if (G.left <= 10 && G.left > 0) SFX.tick(); const t = $("#tm"); if (t) { t.textContent = fmt(G.left); t.classList.toggle("low", G.left < 60); } if (G.left <= 0) finish(); }, 1000); }
