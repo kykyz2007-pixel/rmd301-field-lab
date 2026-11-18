@@ -31,6 +31,7 @@ b,strong{font-weight:800}
 .top h1{margin:0;font-size:24px;font-weight:900;letter-spacing:-.4px;line-height:1.05;cursor:pointer}
 .top h1 small{display:block;font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink2);letter-spacing:1px;margin-top:4px}
 .spacer{flex:1}
+.chipx.sfx{cursor:pointer;margin-right:8px;font-size:15px;padding:3px 9px}
 .chipx{font-family:var(--mono);font-size:12px;font-weight:600;border:2px solid var(--ink);background:var(--paper2);padding:5px 10px;border-radius:6px;white-space:nowrap;box-shadow:2px 2px 0 var(--ink)}
 .page{position:relative;background:var(--paper2);border:2px solid var(--ink);border-radius:4px 14px 14px 4px;padding:18px 18px 18px 44px;box-shadow:5px 5px 0 var(--ink)}
 .page:before{content:"";position:absolute;left:28px;top:0;bottom:0;width:2px;background:#f2a4a0}
@@ -180,6 +181,28 @@ const SH = "ABCDEF";
 let S = { seen: {}, stat: {}, wrong: [], extra: false, sel: LESSONS.map(l => l.id) };
 try { const r = localStorage.getItem("rmd301lab2"); if (r) S = Object.assign(S, JSON.parse(r)); } catch (e) {}
 const save = () => { try { localStorage.setItem("rmd301lab2", JSON.stringify(S)); } catch (e) {} };
+
+// ---------- SOUND (Web Audio, no files) ----------
+const SFX = (() => {
+  let ac = null, master = null;
+  const ctx = () => { if (S.mute) return null; try { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination); } if (ac.state === "suspended") ac.resume(); } catch (e) { return null; } return ac; };
+  const tone = (f, t0, d, type = "sine", v = 0.25, f2 = null) => { const a = ctx(); if (!a) return; const o = a.createOscillator(), g = a.createGain(), s = a.currentTime + t0; o.type = type; o.frequency.setValueAtTime(f, s); if (f2) o.frequency.exponentialRampToValueAtTime(f2, s + d); g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(v, s + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, s + d); o.connect(g); g.connect(master); o.start(s); o.stop(s + d + 0.05); };
+  const noise = (t0, d, v = 0.2, fq = 1800, q = 0.8, type = "bandpass") => { const a = ctx(); if (!a) return; const n = Math.floor(a.sampleRate * d), b = a.createBuffer(1, n, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n); const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), s = a.currentTime + t0; src.buffer = b; f.type = type; f.frequency.value = fq; f.Q.value = q; g.gain.value = v; src.connect(f); f.connect(g); g.connect(master); src.start(s); };
+  const N = m => 440 * Math.pow(2, (m - 69) / 12);
+  return {
+    click() { tone(1150, 0, 0.05, "triangle", 0.12); },
+    page() { noise(0, 0.16, 0.18, 2600, 0.6); tone(520, 0.02, 0.06, "sine", 0.05); },
+    ok(streak = 1) { const up = Math.min(streak - 1, 7); tone(N(79 + up), 0, 0.18, "sine", 0.22); tone(N(86 + up), 0.07, 0.3, "sine", 0.2); tone(N(91 + up), 0.07, 0.25, "triangle", 0.05); },
+    bad() { tone(220, 0, 0.22, "square", 0.08, 150); tone(160, 0.1, 0.28, "sawtooth", 0.06, 110); noise(0, 0.12, 0.05, 400, 1, "lowpass"); },
+    streak() { [72, 76, 79, 84, 88].forEach((m, i) => tone(N(m), 0.18 + i * 0.06, 0.22, "triangle", 0.12)); },
+    tick() { tone(1800, 0, 0.03, "square", 0.05); },
+    stamp() { noise(0, 0.18, 0.5, 180, 0.7, "lowpass"); tone(90, 0, 0.18, "sine", 0.35, 55); },
+    result(p) { this.stamp(); const seq = p >= 0.8 ? [72, 76, 79, 84, 88, 91] : p >= 0.5 ? [72, 76, 79, 84] : [67, 65, 62, 60]; seq.forEach((m, i) => tone(N(m), 0.35 + i * 0.11, i === seq.length - 1 ? 0.6 : 0.2, p >= 0.5 ? "triangle" : "sine", 0.16)); },
+    zoom() { tone(660, 0, 0.12, "sine", 0.08, 990); },
+    toggle() { tone(880, 0, 0.08, "triangle", 0.12); tone(1320, 0.06, 0.1, "triangle", 0.1); }
+  };
+})();
+document.addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.classList.contains("tile") || b.id === "sfxT" || (location.hash.startsWith("#lesson-") && (b.closest(".dots") || b.id === "nx" || b.id === "pv"))) return; SFX.click(); }, true);
 const pool = (ids) => Q.filter(q => (ids || S.sel).includes(q.ls) && (S.extra || !q.extra));
 const lessonQ = id => Q.filter(q => q.ls === id && !q.extra);
 function record(q, ok) {
@@ -192,9 +215,9 @@ const LOGO = `<svg width="46" height="46" viewBox="0 0 54 54" aria-hidden="true"
 const page = inner => `<div class="page"><div class="holes">${"<i></i>".repeat(6)}</div>${inner}</div>`;
 function header() {
   const read = LESSONS.filter(l => (S.seen[l.id] || []).length >= l.cards.length).length;
-  return `<div class="top">${LOGO}<h1 id="homeT">RMD301 Field Lab<small>RESEARCH METHODS FOR DESIGN · GD2006 · HUENTM</small></h1><div class="spacer"></div><span class="chipx">${read}/${LESSONS.length} lessons · ${S.wrong.length} wrong</span></div>`;
+  return `<div class="top">${LOGO}<h1 id="homeT">RMD301 Field Lab<small>RESEARCH METHODS FOR DESIGN · GD2006 · HUENTM</small></h1><div class="spacer"></div><button class="chipx sfx" id="sfxT" title="Sound on/off" aria-label="Sound on/off">${S.mute ? "🔇" : "🔊"}</button><span class="chipx">${read}/${LESSONS.length} lessons · ${S.wrong.length} wrong</span></div>`;
 }
-function bindHome() { const t = $("#homeT"); if (t) t.onclick = () => go("home"); }
+function bindHome() { const t = $("#homeT"); if (t) t.onclick = () => go("home"); const sb = $("#sfxT"); if (sb) sb.onclick = () => { S.mute = !S.mute; save(); sb.textContent = S.mute ? "🔇" : "🔊"; SFX.toggle(); }; }
 let timerId = null; const stop = () => { if (timerId) clearInterval(timerId); timerId = null; };
 function go(v, arg) { stop(); document.onkeydown = null; window.scrollTo(0, 0); ({ home, lessons, lesson, quizHome }[v])(arg); }
 
@@ -225,7 +248,7 @@ function lessons() {
 
 // ---------- LESSON READER ----------
 function lesson({ id, i }) {
-  location.hash = "lesson-" + id;
+  location.hash = "lesson-" + id; SFX.page();
   const L = LN[id], idx = LESSONS.indexOf(L), c = L.cards[i];
   const seen = new Set(S.seen[id] || []); seen.add(i); S.seen[id] = [...seen]; save();
   const last = i === L.cards.length - 1;
@@ -244,7 +267,7 @@ function lesson({ id, i }) {
   $("#pv").onclick = prev; $("#nx").onclick = next;
   const qz = $("#qz"); if (qz) qz.onclick = () => startQuiz("lesson", [id]);
   app.querySelectorAll("[data-k]").forEach(b => b.onclick = () => go("lesson", { id, i: +b.dataset.k }));
-  app.querySelectorAll(".card img").forEach(im => im.onclick = () => { const z = document.createElement("div"); z.className = "zoom"; z.innerHTML = `<img src="${im.src}" alt="">`; z.onclick = () => z.remove(); document.body.appendChild(z); });
+  app.querySelectorAll(".card img").forEach(im => im.onclick = () => { const z = document.createElement("div"); z.className = "zoom"; z.innerHTML = `<img src="${im.src}" alt="">`; z.onclick = () => z.remove(); document.body.appendChild(z); SFX.zoom(); });
   document.onkeydown = e => { if (e.key === "ArrowRight") next(); if (e.key === "ArrowLeft") prev(); };
   let sx = null; const pg = app.querySelector(".page");
   pg.addEventListener("touchstart", e => { sx = e.touches[0].clientX; }, { passive: true });
@@ -291,7 +314,7 @@ function startQuiz(m, ids) {
   let list = (m === "exam" || m === "all") ? shuffle(base) : base.slice().sort((a, b) => w(a) - w(b));
   list = shuffle(list.slice(0, Math.min(n, list.length)));
   G = { m, ids, items: list.map(q => ({ q, order: shuffle(q.options.map((_, k) => k)), pick: null })), i: 0, right: 0, streak: 0, best: 0, t0: Date.now() };
-  if (m === "exam") { G.left = 40 * 60; timerId = setInterval(() => { G.left--; const t = $("#tm"); if (t) { t.textContent = fmt(G.left); t.classList.toggle("low", G.left < 60); } if (G.left <= 0) finish(); }, 1000); }
+  if (m === "exam") { G.left = 40 * 60; timerId = setInterval(() => { G.left--; if (G.left <= 10 && G.left > 0) SFX.tick(); const t = $("#tm"); if (t) { t.textContent = fmt(G.left); t.classList.toggle("low", G.left < 60); } if (G.left <= 0) finish(); }, 1000); }
   location.hash = "play"; show();
 }
 const fmt = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -329,11 +352,11 @@ function show() {
 }
 function choose(oi, el) {
   const it = G.items[G.i];
-  if (G.m === "exam") { it.pick = oi; if (G.i < G.items.length - 1) G.i++; show(); return; }
+  if (G.m === "exam") { SFX.click(); it.pick = oi; if (G.i < G.items.length - 1) G.i++; show(); return; }
   if (it.pick !== null) return;
   it.pick = oi; const ok = oi === it.q.answer; record(it.q, ok);
-  if (ok) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); const r = el.getBoundingClientRect(); const d = document.createElement("div"); d.className = "pop"; d.textContent = "+1"; d.style.left = (r.right - 50) + "px"; d.style.top = r.top + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 900); }
-  else G.streak = 0;
+  if (ok) { G.right++; G.streak++; G.best = Math.max(G.best, G.streak); SFX.ok(G.streak); if (G.streak >= 3 && G.streak % 3 === 0) SFX.streak(); const r = el.getBoundingClientRect(); const d = document.createElement("div"); d.className = "pop"; d.textContent = "+1"; d.style.left = (r.right - 50) + "px"; d.style.top = r.top + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 900); }
+  else { G.streak = 0; SFX.bad(); }
   show();
 }
 function feedback(it) {
@@ -352,6 +375,7 @@ function finish() {
   stop(); document.onkeydown = null;
   if (G.m === "exam") { G.items.forEach(it => record(it.q, it.pick === it.q.answer)); G.right = G.items.filter(it => it.pick === it.q.answer).length; }
   const n = G.items.length, pct = G.right / n, ten = (Math.round(pct * 100) / 10).toFixed(1);
+  setTimeout(() => SFX.result(pct), 150);
   const gr = pct >= .9 ? "A+" : pct >= .8 ? "A" : pct >= .65 ? "B" : pct >= .4 ? "C" : "F";
   const miss = G.items.filter(it => it.pick !== it.q.answer);
   const weak = {}; miss.forEach(it => weak[it.q.ls] = (weak[it.q.ls] || 0) + 1);
